@@ -14,13 +14,15 @@ from skopt.space import Integer, Real
 import xgboost as xgb
 import pandas as pd
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # 只使用第1块显卡 (ID为1)
+
 #设置GPU显存按需增长
 physical_devices = tf.config.list_physical_devices('GPU')
 for device in physical_devices:
     tf.config.experimental.set_memory_growth(device, True)
 
 # 确保保存模型的目录存在
-#os.makedirs("different_weight_results/{weight_combination}/models", exist_ok=True)
+os.makedirs("different_weight_results/{weight_combination}/models", exist_ok=True)
 
 alpha = 0.6
 beta = 1 - alpha  # 计算 beta，使得 alpha + beta = 1
@@ -28,7 +30,7 @@ beta = 1 - alpha  # 计算 beta，使得 alpha + beta = 1
 weight_combination = f'vggnet-like-hw-alpha_{alpha:.1f}_beta_{beta:.1f}'
 
 # 加载训练好的 XGBoost 模型
-xgb_model_path = '/home/ssd1/vscode/nas_hw/nihe/vggnet-like-hw/best/xgboost_lut_model.json'  # 替换为您的模型路径
+xgb_model_path = './pretrained_xgboost/xgboost_lut_model.json'  # 替换为您的模型路径
 booster = xgb.Booster()
 booster.load_model(xgb_model_path)
 
@@ -46,7 +48,7 @@ def load_data(train_path, test_path):
     test_images = np.transpose(test_data['X'], (3, 0, 1, 2))
     test_labels = test_data['y']
 
-    # train_images = train_data['data']  # [num_images, height, width, channels]
+    # train_images = train_data['data']  # [num_images, height, width, channels]     #使用Cifar-10数据集需要替换的
     # train_labels = train_data['labels']  
     # test_images = test_data['data']
     # test_labels = test_data['labels']
@@ -325,11 +327,11 @@ search_space = [
 ]
 
 # 加载数据集
-# train_path = '/home/ssd1/vscode/nas_hw/datasets/cifar10_train_32x32.mat' #CIFAR 10
-# test_path = '/home/ssd1/vscode/nas_hw/datasets/cifar10_test_32x32.mat'
+# train_path = './datasets/cifar10_train_32x32.mat' #CIFAR 10
+# test_path = './datasets/cifar10_test_32x32.mat'
 
-train_path = '/home/ssd1/vscode/hls4ml-tutorial-main/datasets/train_32x32.mat' #街景门牌号
-test_path = '/home/ssd1/vscode/hls4ml-tutorial-main/datasets/test_32x32.mat'
+train_path = './datasets/train_32x32.mat' #街景门牌号
+test_path = './datasets/test_32x32.mat'
 
 ds_train, ds_val, ds_test, input_shape = load_data(train_path, test_path)
 
@@ -364,10 +366,6 @@ with open(output_csv_path, 'w', newline='') as file:
 
 counter = 0  # 用于计数
 initial_lr = 0.001  # 固定初始学习率（不在搜索空间内）
-
-
-
-
 
 # 使用贝叶斯优化进行超参数搜索
 result = gp_minimize(objective, search_space, n_calls=200, random_state=42)
@@ -424,8 +422,3 @@ plt.show()
 
 print(f"已将 combined_loss 图像保存到 {output_image_path}")
 
-# 如果需要，你可以加载最佳 AUC 模型
-# best_auc_model = tf.keras.models.load_model(best_auc_model_path, custom_objects={
-#     'focal_loss_fixed': focal_loss(),
-#     'f1_score_metric': f1_score_metric
-# })

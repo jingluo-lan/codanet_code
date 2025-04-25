@@ -1,11 +1,14 @@
+import os
+# 设置环境变量以便调用 Vivado 工具链
+os.environ['XILINX_VIVADO'] = '/home/user2/vivado2019/Vivado/2019.2'
+os.environ['PATH'] = os.environ['XILINX_VIVADO'] + '/bin:' + os.environ['PATH']
+
 import tensorflow.compat.v2 as tf
 from tensorflow_model_optimization.sparsity.keras import strip_pruning
 from tensorflow_model_optimization.python.core.sparsity.keras import pruning_wrapper
 from qkeras.utils import _add_supported_quantized_objects
 import hls4ml
-import plotting
 from sklearn.metrics import f1_score
-import os
 import glob
 import concurrent.futures
 from tqdm import tqdm
@@ -109,10 +112,6 @@ def synthesize_model(model_path):
 
         # 编译 HLS 模型
         hls_model.compile()
-
-        # 设置环境变量以便调用 Vivado 工具链
-        os.environ['XILINX_VIVADO'] = '/home/ssd0/Vitis2024.1/Vitis_HLS/2024.1'
-        os.environ['PATH'] = os.environ['XILINX_VIVADO'] + '/bin:' + os.environ['PATH']
 
         # 合成 HLS 模型，不执行 C 模拟，进行综合 (synth=True) 和后端综合 (vsynth=False)
         hls_model.build(csim=False, synth=True, vsynth=False)
